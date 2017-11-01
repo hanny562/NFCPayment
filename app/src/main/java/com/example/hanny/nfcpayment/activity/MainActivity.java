@@ -11,6 +11,8 @@ import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -23,12 +25,15 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.hanny.nfcpayment.R;
+import com.example.hanny.nfcpayment.adapter.ItemAdapter;
 import com.example.hanny.nfcpayment.helper.SQLController;
 import com.example.hanny.nfcpayment.helper.SessionController;
+import com.example.hanny.nfcpayment.model.Item;
 
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class MainActivity extends Activity {
@@ -38,6 +43,9 @@ public class MainActivity extends Activity {
     private SQLController sqlController;
     private SessionController sessionController;
     private NfcAdapter nfcAdapter;
+    private RecyclerView mItemRecyclerView;
+    private ItemAdapter mAdapter;
+    private ArrayList<Item> mItemCollection;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +59,8 @@ public class MainActivity extends Activity {
         sqlController = new SQLController(getApplicationContext());
 
         sessionController = new SessionController(getApplicationContext());
+
+        init();
 
         nfcAdapter = nfcAdapter.getDefaultAdapter(this);
 
@@ -87,6 +97,15 @@ public class MainActivity extends Activity {
                 logoutUser();
             }
         });
+    }
+
+    private void init(){
+        mItemRecyclerView = (RecyclerView) findViewById(R.id.rvItem);
+        mItemRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        mItemRecyclerView.setHasFixedSize(true);
+        mItemCollection = new ArrayList<>();
+        mAdapter = new ItemAdapter(mItemCollection, this);
+        mItemRecyclerView.setAdapter(mAdapter);
     }
 
     @Override
@@ -190,9 +209,12 @@ public class MainActivity extends Activity {
                             String item_id = response.getString("item_id");
                             String item_name = response.getString("item_name");
                             String price = response.getString("price");
+                            int quantity = response.getInt("quantity");
 
                             Toast.makeText(getApplicationContext(), "Item Id : " + item_id + "\n" + "Item Name : " + item_name + "\n" + "Price : RM " + price, Toast.LENGTH_LONG).show();
                             //tvRes.setText("Item Id : " + item_id + "\n" + "Item Name : " + item_name + "\n" + "Price : RM " + price);
+
+                            addIntoRecyclerView(item_name,item_id,price, quantity);
                         } catch (Exception e) {
                             Log.d("Response", e.getMessage());
                         }
@@ -209,6 +231,16 @@ public class MainActivity extends Activity {
 
         );
         queue.add(getRequest);
+    }
+
+    private void addIntoRecyclerView(final String ItemName, final String itemId, final String itemPrice, final int itemQuantity){
+        Item item = new Item();
+        item.setItemName(ItemName);
+        item.setItemId(itemId);
+        item.setItemPrice(itemPrice);
+        item.setItemQuantity(itemQuantity);
+
+        mItemCollection.add(item);
     }
 
     private void logoutUser() {
