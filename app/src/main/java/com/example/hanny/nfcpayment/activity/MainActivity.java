@@ -9,8 +9,6 @@ import android.content.IntentFilter;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
-import android.nfc.Tag;
-import android.nfc.tech.NfcA;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.Log;
@@ -19,9 +17,16 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.example.hanny.nfcpayment.R;
 import com.example.hanny.nfcpayment.helper.SQLController;
 import com.example.hanny.nfcpayment.helper.SessionController;
+
+import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
@@ -131,7 +136,8 @@ public class MainActivity extends Activity {
                 // Do nothing but close the dialog
 
                 dialog.dismiss();
-                addItemIntoCart(tagContent);
+                httpRequestGET(tagContent);
+                //addItemIntoCart(tagContent);
             }
         });
 
@@ -165,6 +171,44 @@ public class MainActivity extends Activity {
             Log.e("getTextFromNdefRecord", e.getMessage(), e);
         }
         return tagContent;
+    }
+
+    private void httpRequestGET(final String item_id) {
+        com.android.volley.RequestQueue queue = Volley.newRequestQueue(this);
+        final String url = "http://192.168.0.11/item.php?item_id=" + item_id;
+
+        JsonObjectRequest getRequest = new JsonObjectRequest(Request.Method.GET, url, null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        // display response
+                        Log.d("Response", response.toString());
+                        Toast.makeText(getApplicationContext(), response.toString(), Toast.LENGTH_LONG).show();
+
+                        try {
+                            response = response.getJSONObject("item");
+                            String item_id = response.getString("item_id");
+                            String item_name = response.getString("item_name");
+                            String price = response.getString("price");
+
+                            Toast.makeText(getApplicationContext(), "Item Id : " + item_id + "\n" + "Item Name : " + item_name + "\n" + "Price : RM " + price, Toast.LENGTH_LONG).show();
+                            //tvRes.setText("Item Id : " + item_id + "\n" + "Item Name : " + item_name + "\n" + "Price : RM " + price);
+                        } catch (Exception e) {
+                            Log.d("Response", e.getMessage());
+                        }
+
+
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.d("Error.Response", error.toString());
+                    }
+                }
+
+        );
+        queue.add(getRequest);
     }
 
     private void logoutUser() {
