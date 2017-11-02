@@ -9,6 +9,11 @@ public class Item {
     private String itemId;
     private String itemPrice;
     private int itemQuantity;
+    private double itemtotalPrice;
+
+    public Item(double itemtotalPrice) {
+        this.itemtotalPrice = itemtotalPrice;
+    }
 
     public Item() {
 
@@ -53,5 +58,14 @@ public class Item {
 
     public void setItemQuantity(int itemQuantity) {
         this.itemQuantity = itemQuantity;
+    }
+
+    public double getItemtotalPrice() {
+
+        return itemtotalPrice;
+    }
+
+    public void setItemtotalPrice(double itemtotalPrice) {
+        this.itemtotalPrice = itemtotalPrice;
     }
 }

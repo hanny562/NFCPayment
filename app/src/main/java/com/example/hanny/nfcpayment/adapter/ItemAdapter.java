@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
 import com.example.hanny.nfcpayment.R;
 import com.example.hanny.nfcpayment.model.Item;
 
@@ -28,19 +29,20 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemHolder>{
 
 
     @Override
-    public ItemAdapter.ItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public ItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_layout,parent, false);
         return new ItemHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(ItemAdapter.ItemHolder holder, int position) {
+    public void onBindViewHolder(ItemHolder holder, int position) {
         Item item = mData.get(position);
 
         holder.setItemName(item.getItemName());
         holder.setItemId(item.getItemId());
         holder.setItemPrice("RM " + item.getItemPrice());
         holder.setTvItemQuantity(item.getItemQuantity());
+
     }
 
     @Override
@@ -75,17 +77,17 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemHolder>{
 
         public void setItemId (String itemId)
         {
-            tvItemName.setText(itemId);
+            tvItemId.setText(itemId);
         }
 
         public void setItemPrice (String itemPrice)
         {
-            tvItemName.setText(itemPrice);
+            tvItemPrice.setText(itemPrice);
         }
 
         public void setTvItemQuantity (int itemQuantity)
         {
-            tvItemName.setText(itemQuantity);
+            tvItemQuantity.setText(itemQuantity);
         }
 
     }

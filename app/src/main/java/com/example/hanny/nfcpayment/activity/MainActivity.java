@@ -31,15 +31,19 @@ import com.example.hanny.nfcpayment.helper.SessionController;
 import com.example.hanny.nfcpayment.model.Item;
 
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.io.UnsupportedEncodingException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Calendar;
 
 public class MainActivity extends Activity {
 
-    private TextView txtName, txtEmail;
-    private Button btnLogout;
+    private TextView txtName, txtDay,txtDate,txtTotalPrice;
+    private Button btnLogout,btnHistory;
     private SQLController sqlController;
     private SessionController sessionController;
     private NfcAdapter nfcAdapter;
@@ -52,13 +56,28 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        txtName = (TextView) findViewById(R.id.name);
-        txtEmail = (TextView) findViewById(R.id.email);
-        btnLogout = (Button) findViewById(R.id.btnLogout);
+        txtName = (TextView) findViewById(R.id.tvInfoName);
+        txtDay = (TextView) findViewById(R.id.tvInfoDay);
+        txtDate = (TextView) findViewById(R.id.tvInfoDate);
+        txtTotalPrice = (TextView) findViewById(R.id.tvInfoTotalPrice);
+        btnLogout = (Button) findViewById(R.id.btnInfoLogout);
+        btnHistory = (Button) findViewById(R.id.btnInfoHistory);
+
 
         sqlController = new SQLController(getApplicationContext());
 
         sessionController = new SessionController(getApplicationContext());
+
+        //code for Day of week
+        SimpleDateFormat sdf = new SimpleDateFormat("EEEE");
+        Date d = new Date();
+        String dayOfTheWeek = sdf.format(d);
+
+        //code for today's date
+        String date = new SimpleDateFormat("dd/MM/yyyy").format(new Date());
+
+        txtDay.setText(dayOfTheWeek);
+        txtDate.setText(date);
 
         init();
 
@@ -89,7 +108,7 @@ public class MainActivity extends Activity {
         String email = user.get("email");
 
         txtName.setText(name);
-        txtEmail.setText(email);
+        //txtEmail.setText(email);
 
         btnLogout.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -234,7 +253,7 @@ public class MainActivity extends Activity {
     }
 
     private void addIntoRecyclerView(final String ItemName, final String itemId, final String itemPrice, final int itemQuantity){
-        Item item = new Item();
+        Item item = new Item(ItemName, itemId, itemPrice, itemQuantity);
         item.setItemName(ItemName);
         item.setItemId(itemId);
         item.setItemPrice(itemPrice);
