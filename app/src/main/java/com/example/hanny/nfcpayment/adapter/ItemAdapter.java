@@ -1,6 +1,7 @@
 package com.example.hanny.nfcpayment.adapter;
 
 import android.app.Activity;
+import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,11 +21,11 @@ import java.util.ArrayList;
 public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemHolder>{
 
     private ArrayList<Item> mData;
-    private Activity mActivity;
+    private Context mContext;
 
-    public ItemAdapter(ArrayList<Item> data, Activity activity) {
+    public ItemAdapter(ArrayList<Item> data, Context context) {
         this.mData = data;
-        this.mActivity = activity;
+        this.mContext = context;
     }
 
 

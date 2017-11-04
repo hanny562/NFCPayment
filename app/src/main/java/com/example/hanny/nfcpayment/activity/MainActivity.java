@@ -18,6 +18,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.Toolbar;
 
 import com.android.volley.Request;
 import com.android.volley.Response;
@@ -213,6 +214,7 @@ public class MainActivity extends Activity {
 
     private void httpRequestGET(final String item_id) {
         com.android.volley.RequestQueue queue = Volley.newRequestQueue(this);
+
         final String url = "http://192.168.0.11/item.php?item_id=" + item_id;
 
         JsonObjectRequest getRequest = new JsonObjectRequest(Request.Method.GET, url, null,
@@ -234,6 +236,7 @@ public class MainActivity extends Activity {
                             //tvRes.setText("Item Id : " + item_id + "\n" + "Item Name : " + item_name + "\n" + "Price : RM " + price);
 
                             addIntoRecyclerView(item_name,item_id,price, quantity);
+                            Toast.makeText(getApplicationContext(),"Item sent to recyclerview", Toast.LENGTH_LONG).show();
                         } catch (Exception e) {
                             Log.d("Response", e.getMessage());
                         }
@@ -253,14 +256,20 @@ public class MainActivity extends Activity {
     }
 
     private void addIntoRecyclerView(final String ItemName, final String itemId, final String itemPrice, final int itemQuantity){
-        Item item = new Item(ItemName, itemId, itemPrice, itemQuantity);
+        Toast.makeText(getApplicationContext(), "recycler function initiated", Toast.LENGTH_LONG).show();
+        Item item = new Item();
         item.setItemName(ItemName);
         item.setItemId(itemId);
         item.setItemPrice(itemPrice);
         item.setItemQuantity(itemQuantity);
 
+        //mAdapter = new ItemAdapter(MainActivity.this,item);
+
         mItemCollection.add(item);
+        mAdapter.notifyItemChanged(0);
     }
+
+
 
     private void logoutUser() {
 
