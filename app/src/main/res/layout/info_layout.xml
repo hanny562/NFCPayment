@@ -80,13 +80,24 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/tvInfoTotalPrice"
-            android:text="Total : RM 1000"
+            android:id="@+id/tvInfoTotalPriceTag"
+            android:text="Total :"
             android:textColor="@color/white"
             android:textAlignment="center"
             android:textSize="18dp"
             android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/tvInfoTotalPrice"
+            android:text=""
+            android:textColor="@color/white"
+            android:textAlignment="center"
+            android:textSize="18dp"
             android:layout_marginBottom="20dp"/>
+
     </LinearLayout>
 
 

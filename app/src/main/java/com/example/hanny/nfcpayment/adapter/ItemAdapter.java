@@ -41,9 +41,9 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemHolder>{
 
         holder.setItemName(item.getItemName());
         holder.setItemId(item.getItemId());
-        holder.setItemPrice("RM " + item.getItemPrice());
+        holder.setItemPrice(item.getItemPrice());
         holder.setTvItemQuantity(item.getItemQuantity());
-
+        holder.setTvItemAddedDate(item.getItemAddedDate());
     }
 
     @Override
@@ -61,6 +61,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemHolder>{
         TextView tvItemId;
         TextView tvItemPrice;
         TextView tvItemQuantity;
+        TextView tvItemAddedDate;
 
         public ItemHolder(View itemView) {
             super(itemView);
@@ -69,6 +70,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemHolder>{
             tvItemId = (TextView) itemView.findViewById(R.id.tvItemId);
             tvItemPrice = (TextView) itemView.findViewById(R.id.tvItemPrice);
             tvItemQuantity = (TextView) itemView.findViewById(R.id.tvItemQuantity);
+            tvItemAddedDate = (TextView) itemView.findViewById(R.id.tvItemAddedDate);
         }
 
         public void setItemName (String itemName)
@@ -78,17 +80,22 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemHolder>{
 
         public void setItemId (String itemId)
         {
-            tvItemId.setText(itemId);
+            tvItemId.setText("Item ID : " + itemId);
         }
 
-        public void setItemPrice (String itemPrice)
+        public void setItemPrice (double itemPrice)
         {
-            tvItemPrice.setText(itemPrice);
+            tvItemPrice.setText("RM " + Double.toString(itemPrice));
         }
 
-        public void setTvItemQuantity (int itemQuantity)
+        public void setTvItemQuantity (String itemQuantity)
         {
             tvItemQuantity.setText(itemQuantity);
+        }
+
+        public void setTvItemAddedDate (String itemAddedDate)
+        {
+            tvItemAddedDate.setText("Added on : " + itemAddedDate);
         }
 
     }

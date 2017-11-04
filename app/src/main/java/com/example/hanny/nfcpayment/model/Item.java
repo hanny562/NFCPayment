@@ -7,9 +7,10 @@ package com.example.hanny.nfcpayment.model;
 public class Item {
     private String itemName;
     private String itemId;
-    private String itemPrice;
-    private int itemQuantity;
+    private double itemPrice;
+    private String itemQuantity;
     private double itemtotalPrice;
+    private String itemAddedDate;
 
     public Item(double itemtotalPrice) {
         this.itemtotalPrice = itemtotalPrice;
@@ -20,13 +21,13 @@ public class Item {
 
     }
 
-    public Item(String itemName,String itemId, String itemPrice, int itemQuantity) {
+    public Item(String itemName,String itemId, double itemPrice, String itemQuantity, String itemAddedDate) {
         this.itemName = itemName;
         this.itemId = itemId;
         this.itemPrice = itemPrice;
         this.itemQuantity = itemQuantity;
+        this.itemAddedDate = itemAddedDate;
     }
-
 
 
     public String getItemName() {
@@ -45,19 +46,19 @@ public class Item {
         this.itemId = itemId;
     }
 
-    public String getItemPrice() {
+    public double getItemPrice() {
         return itemPrice;
     }
 
-    public void setItemPrice(String itemPrice) {
+    public void setItemPrice(double itemPrice) {
         this.itemPrice = itemPrice;
     }
 
-    public int getItemQuantity() {
+    public String getItemQuantity() {
         return itemQuantity;
     }
 
-    public void setItemQuantity(int itemQuantity) {
+    public void setItemQuantity(String itemQuantity) {
         this.itemQuantity = itemQuantity;
     }
 
@@ -68,5 +69,13 @@ public class Item {
 
     public void setItemtotalPrice(double itemtotalPrice) {
         this.itemtotalPrice = itemtotalPrice;
+    }
+
+    public String getItemAddedDate() {
+        return itemAddedDate;
+    }
+
+    public void setItemAddedDate(String itemAddedDate) {
+        this.itemAddedDate = itemAddedDate;
     }
 }

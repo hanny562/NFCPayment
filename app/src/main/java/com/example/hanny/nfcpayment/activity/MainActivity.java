@@ -21,9 +21,11 @@ import android.widget.Toast;
 import android.widget.Toolbar;
 
 import com.android.volley.Request;
+import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.hanny.nfcpayment.R;
 import com.example.hanny.nfcpayment.adapter.ItemAdapter;
@@ -35,22 +37,26 @@ import org.json.JSONObject;
 import org.w3c.dom.Text;
 
 import java.io.UnsupportedEncodingException;
+import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Calendar;
+import java.util.Map;
+import java.util.TimeZone;
 
 public class MainActivity extends Activity {
 
-    private TextView txtName, txtDay,txtDate,txtTotalPrice;
-    private Button btnLogout,btnHistory;
+    private TextView txtName, txtDay, txtDate, txtTotalPrice;
+    private Button btnLogout, btnHistory;
     private SQLController sqlController;
     private SessionController sessionController;
     private NfcAdapter nfcAdapter;
     private RecyclerView mItemRecyclerView;
     private ItemAdapter mAdapter;
     private ArrayList<Item> mItemCollection;
+    private double totalPrice = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -117,9 +123,15 @@ public class MainActivity extends Activity {
                 logoutUser();
             }
         });
+        btnHistory.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startHistoryActivity();
+            }
+        });
     }
 
-    private void init(){
+    private void init() {
         mItemRecyclerView = (RecyclerView) findViewById(R.id.rvItem);
         mItemRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mItemRecyclerView.setHasFixedSize(true);
@@ -229,14 +241,15 @@ public class MainActivity extends Activity {
                             response = response.getJSONObject("item");
                             String item_id = response.getString("item_id");
                             String item_name = response.getString("item_name");
-                            String price = response.getString("price");
-                            int quantity = response.getInt("quantity");
+                            double price = response.getDouble("price");
+                            String quantity = response.getString("quantity");
 
                             Toast.makeText(getApplicationContext(), "Item Id : " + item_id + "\n" + "Item Name : " + item_name + "\n" + "Price : RM " + price, Toast.LENGTH_LONG).show();
                             //tvRes.setText("Item Id : " + item_id + "\n" + "Item Name : " + item_name + "\n" + "Price : RM " + price);
 
-                            addIntoRecyclerView(item_name,item_id,price, quantity);
-                            Toast.makeText(getApplicationContext(),"Item sent to recyclerview", Toast.LENGTH_LONG).show();
+                            calculateTotalPrice(price);
+                            addIntoRecyclerView(item_name, item_id, price, quantity);
+                            Toast.makeText(getApplicationContext(), "Item sent to recyclerview", Toast.LENGTH_LONG).show();
                         } catch (Exception e) {
                             Log.d("Response", e.getMessage());
                         }
@@ -255,21 +268,73 @@ public class MainActivity extends Activity {
         queue.add(getRequest);
     }
 
-    private void addIntoRecyclerView(final String ItemName, final String itemId, final String itemPrice, final int itemQuantity){
+    private void addIntoRecyclerView(final String ItemName, final String itemId, final double itemPrice, final String itemQuantity) {
         Toast.makeText(getApplicationContext(), "recycler function initiated", Toast.LENGTH_LONG).show();
         Item item = new Item();
         item.setItemName(ItemName);
         item.setItemId(itemId);
         item.setItemPrice(itemPrice);
         item.setItemQuantity(itemQuantity);
+        long date = System.currentTimeMillis();
 
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy h:mm a");
+        String dateString = sdf.format(date);
+
+        item.setItemAddedDate(dateString);
         //mAdapter = new ItemAdapter(MainActivity.this,item);
 
         mItemCollection.add(item);
-        mAdapter.notifyItemChanged(0);
+        postIntoCartItem(itemId,itemQuantity,dateString);
+        mAdapter.notifyItemInserted(0);
     }
 
 
+    private void calculateTotalPrice(final double itemPrice) {
+        totalPrice = totalPrice + itemPrice;
+        txtTotalPrice.setText("RM " + Double.toString(totalPrice));
+    }
+
+    private void startHistoryActivity() {
+        Intent intent = new Intent(MainActivity.this, HistoryActivity.class);
+        startActivity(intent);
+    }
+    private void postIntoCartItem(final String item_id, final String quantity, final String added_date){
+        RequestQueue queue = Volley.newRequestQueue(this);
+        final String url = "http://192.168.0.11/addItemCart.php";
+        StringRequest postRequest = new StringRequest(Request.Method.POST, url,
+                new Response.Listener<String>()
+                {
+                    @Override
+                    public void onResponse(String response) {
+                        // response
+                        Log.d("Response", response);
+                    }
+                },
+                new Response.ErrorListener()
+                {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        // error
+                        Log.d("Error.Response", error.toString());
+                    }
+                }
+        ) {
+            @Override
+            protected Map<String, String> getParams()
+            {
+                Map<String, String>  params = new HashMap<String, String>();
+                //HashMap<String, String> user = sqlController.getUserDetails();
+                //params.put("email", user.get("email"));
+                params.put("item_id", item_id);
+                params.put("quantity", quantity);
+                params.put("added_date", added_date);
+
+                return params;
+            }
+        };
+        queue.add(postRequest);
+
+    }
 
     private void logoutUser() {
 

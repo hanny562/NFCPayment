@@ -8,6 +8,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -25,11 +26,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/tvItemId"
-            android:layout_marginBottom="10dp"
             android:layout_marginRight="16dp"
             android:layout_marginLeft="16dp"
             android:text="P123456"
             android:textSize="14sp"/>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -44,9 +45,10 @@
                 android:layout_height="wrap_content"
                 android:id="@+id/tvItemPrice"
                 android:layout_weight="1"
-                android:text="RM 200"
+                android:text="100"
                 android:textColor="@android:color/black"
                 android:textSize="16sp"/>
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -55,6 +57,21 @@
                 android:layout_marginBottom="4dp"
                 android:text="x1"
                 android:textSize="20dp"/>
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/tvItemAddedDate"
+                android:layout_marginBottom="10dp"
+                android:layout_marginRight="16dp"
+                android:layout_marginLeft="16dp"
+                android:text="Added Date"
+                />
         </LinearLayout>
 
     </LinearLayout>
