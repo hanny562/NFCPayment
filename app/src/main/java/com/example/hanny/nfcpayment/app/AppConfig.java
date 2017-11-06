@@ -6,6 +6,6 @@ package com.example.hanny.nfcpayment.app;
 
 public class AppConfig {
 
-    public static String URL_LOGIN = "http://192.168.0.11/login.php";
-    public static String URL_REGISTER = "http://192.168.0.11/register.php";
+    public static String URL_LOGIN = "http://192.168.0.108/login.php";
+    public static String URL_REGISTER = "http://192.168.0.108/register.php";
 }
