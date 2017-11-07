@@ -2,6 +2,7 @@ package com.example.hanny.nfcpayment.activity;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -11,10 +12,12 @@ import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -49,6 +52,7 @@ import java.util.TimeZone;
 public class MainActivity extends Activity {
 
     private TextView txtName, txtDay, txtDate, txtTotalPrice;
+    private FloatingActionButton fab;
     private Button btnLogout, btnHistory;
     private SQLController sqlController;
     private SessionController sessionController;
@@ -57,6 +61,7 @@ public class MainActivity extends Activity {
     private ItemAdapter mAdapter;
     private ArrayList<Item> mItemCollection;
     private double totalPrice = 0;
+    Dialog dialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +74,7 @@ public class MainActivity extends Activity {
         txtTotalPrice = (TextView) findViewById(R.id.tvInfoTotalPrice);
         btnLogout = (Button) findViewById(R.id.btnInfoLogout);
         btnHistory = (Button) findViewById(R.id.btnInfoHistory);
+        fab = (FloatingActionButton) findViewById(R.id.fab);
 
         sqlController = new SQLController(getApplicationContext());
 
@@ -94,11 +100,8 @@ public class MainActivity extends Activity {
         String email = user.get("email");
 
         txtName.setText(name);
-        //txtEmail.setText(email);
 
-        //not able to retrieve email;
         getCartItembyEmail(email);
-        //Toast.makeText(this, email, Toast.LENGTH_LONG).show();
 
         btnLogout.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -110,6 +113,13 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 startHistoryActivity();
+            }
+        });
+
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showPaymentDialogBox(Double.toString(totalPrice));
             }
         });
     }
@@ -209,6 +219,34 @@ public class MainActivity extends Activity {
         alert.show();
     }
 
+    private void showPaymentDialogBox(final String totalprice){
+        dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.diag_payment);
+        dialog.show();
+
+
+        TextView promptTotalPrice = (TextView) dialog .findViewById(R.id.promptTotalPrice);
+
+        promptTotalPrice.setText("TotalPrice : " + totalprice);
+
+        Button btnPayment = (Button)dialog.findViewById(R.id.btnPromptPayment);
+        Button btnCancel = (Button)dialog.findViewById(R.id.btnPromptCancel);
+
+        btnPayment.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
+        btnCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+    }
+
     public String getTextFromNdefRecord(NdefRecord ndefRecord) {
         String tagContent = null;
         try {
@@ -226,7 +264,7 @@ public class MainActivity extends Activity {
     private void getCartItembyEmail(final String email) {
         com.android.volley.RequestQueue queue = Volley.newRequestQueue(this);
 
-        final String url = "http://192.168.0.108/retrieveitembyemail.php?email=" + email;
+        final String url = "http://192.168.0.11/retrieveitembyemail.php?email=" + email;
 
         JsonObjectRequest getRequest = new JsonObjectRequest(Request.Method.GET, url, null,
                 new Response.Listener<JSONObject>() {
@@ -237,6 +275,7 @@ public class MainActivity extends Activity {
                         Toast.makeText(getApplicationContext(), response.toString(), Toast.LENGTH_LONG).show();
 
                         try {
+
                             response = response.getJSONObject("cart_item");
                             String item_id = response.getString("item_id");
                             String item_name = response.getString("item_name");
@@ -244,10 +283,9 @@ public class MainActivity extends Activity {
                             String quantity = response.getString("quantity");
                             String added_date = response.getString("added_date");
 
-                            //Toast.makeText(getApplicationContext(), "Item Id : " + item_id + "\n" + "Item Name : " + item_name + "\n" + "Price : RM " + price, Toast.LENGTH_LONG).show();
                             calculateTotalPrice(price);
                             addIntoRecyclerView(item_name, item_id, price, quantity, added_date);
-                            //Toast.makeText(getApplicationContext(), "Item sent to recyclerview", Toast.LENGTH_LONG).show();
+
                         } catch (Exception e) {
                             Log.d("Response", e.getMessage());
                         }
@@ -267,7 +305,7 @@ public class MainActivity extends Activity {
     private void httpRequestGET(final String item_id) {
         com.android.volley.RequestQueue queue = Volley.newRequestQueue(this);
 
-        final String url = "http://192.168.0.108/item.php?item_id=" + item_id;
+        final String url = "http://192.168.0.11/item.php?item_id=" + item_id;
 
         JsonObjectRequest getRequest = new JsonObjectRequest(Request.Method.GET, url, null,
                 new Response.Listener<JSONObject>() {
@@ -287,11 +325,9 @@ public class MainActivity extends Activity {
                             long date = System.currentTimeMillis();
                             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy h:mm a");
                             String dateString = sdf.format(date);
-                            //Toast.makeText(getApplicationContext(), "Item Id : " + item_id + "\n" + "Item Name : " + item_name + "\n" + "Price : RM " + price, Toast.LENGTH_LONG).show();
                             calculateTotalPrice(price);
                             addIntoRecyclerView(item_name, item_id, price, quantity, dateString);
                             postIntoCartItem(item_id, quantity, dateString);
-                            //Toast.makeText(getApplicationContext(), "Item sent to recyclerview", Toast.LENGTH_LONG).show();
                         } catch (Exception e) {
                             Log.d("Response", e.getMessage());
                         }
@@ -309,7 +345,6 @@ public class MainActivity extends Activity {
     }
 
     private void addIntoRecyclerView(final String ItemName, final String itemId, final double itemPrice, final String itemQuantity, final String dateString) {
-        //Toast.makeText(getApplicationContext(), "recycler function initiated", Toast.LENGTH_LONG).show();
         Item item = new Item();
         item.setItemName(ItemName);
         item.setItemId(itemId);
@@ -339,7 +374,7 @@ public class MainActivity extends Activity {
         sqlController = new SQLController(getApplicationContext());
         HashMap<String, String> user = sqlController.getUserDetails();
         final String email = user.get("email");
-        final String url = "http://192.168.0.108/addItemCart.php";
+        final String url = "http://192.168.0.11/addItemCart.php";
         Toast.makeText(getApplicationContext(), email + "\n" + item_id+ "\n" + quantity+ "\n" + added_date, Toast.LENGTH_LONG).show();
         StringRequest postRequest = new StringRequest(Request.Method.POST, url,
                 new Response.Listener<String>() {
