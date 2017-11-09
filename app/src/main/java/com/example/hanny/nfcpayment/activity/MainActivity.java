@@ -36,6 +36,7 @@ import com.example.hanny.nfcpayment.helper.SQLController;
 import com.example.hanny.nfcpayment.helper.SessionController;
 import com.example.hanny.nfcpayment.model.Item;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.w3c.dom.Text;
 
@@ -264,9 +265,9 @@ public class MainActivity extends Activity {
     private void getCartItembyEmail(final String email) {
         com.android.volley.RequestQueue queue = Volley.newRequestQueue(this);
 
-        final String url = "http://192.168.0.11/retrieveitembyemail.php?email=" + email;
+        final String url = "http://192.168.0.11/populatecartbyemail.php?email=" + email;
 
-        JsonObjectRequest getRequest = new JsonObjectRequest(Request.Method.GET, url, null,
+        final JsonObjectRequest getRequest = new JsonObjectRequest(Request.Method.GET, url, null,
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
@@ -276,15 +277,19 @@ public class MainActivity extends Activity {
 
                         try {
 
-                            response = response.getJSONObject("cart_item");
-                            String item_id = response.getString("item_id");
-                            String item_name = response.getString("item_name");
-                            double price = response.getDouble("price");
-                            String quantity = response.getString("quantity");
-                            String added_date = response.getString("added_date");
+                            JSONArray arr = response.getJSONArray("cart_item");
+                            for(int i=0; i < arr.length(); i++){
+                                JSONObject json_data = arr.getJSONObject(i);
+                                //Toast.makeText(getApplicationContext(),json_data.getString("item_id"), Toast.LENGTH_LONG).show();
+                                String item_id = json_data.getString("item_id");
+                                String item_name = json_data.getString("item_name");
+                                double price = json_data.getDouble("price");
+                                String quantity = json_data.getString("quantity");
+                                String added_date = json_data.getString("added_date");
 
-                            calculateTotalPrice(price);
-                            addIntoRecyclerView(item_name, item_id, price, quantity, added_date);
+                                calculateTotalPrice(price);
+                                addIntoRecyclerView(item_name, item_id, price, quantity, added_date);
+                            }
 
                         } catch (Exception e) {
                             Log.d("Response", e.getMessage());

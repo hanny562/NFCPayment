@@ -55,7 +55,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemHolder>{
         return mData.size();
     }
 
-    public class ItemHolder extends RecyclerView.ViewHolder{
+    public class ItemHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
 
         TextView tvItemName;
         TextView tvItemId;
@@ -71,6 +71,14 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemHolder>{
             tvItemPrice = (TextView) itemView.findViewById(R.id.tvItemPrice);
             tvItemQuantity = (TextView) itemView.findViewById(R.id.tvItemQuantity);
             tvItemAddedDate = (TextView) itemView.findViewById(R.id.tvItemAddedDate);
+
+            itemView.setOnClickListener(this);
+            itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    return false;
+                }
+            });
         }
 
         public void setItemName (String itemName)
@@ -98,6 +106,11 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemHolder>{
             tvItemAddedDate.setText("Added on : " + itemAddedDate);
         }
 
+
+        @Override
+        public void onClick(View v) {
+
+        }
     }
 
 }
