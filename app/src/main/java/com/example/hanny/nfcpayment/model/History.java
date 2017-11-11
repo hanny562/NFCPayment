@@ -6,6 +6,7 @@ package com.example.hanny.nfcpayment.model;
 
 public class History {
     private String hBillId;
+    private String hEmail;
     private String hDate;
     private double hTotalPrice;
 
@@ -13,10 +14,19 @@ public class History {
         super();
     }
 
-    public History(String hBillId, String hDate, double hTotalPrice) {
+    public History(String hBillId, String hEmail, String hDate, double hTotalPrice) {
         this.hBillId = hBillId;
+        this.hEmail = hEmail;
         this.hDate = hDate;
         this.hTotalPrice = hTotalPrice;
+    }
+
+    public String gethEmail() {
+        return hEmail;
+    }
+
+    public void sethEmail(String hEmail) {
+        this.hEmail = hEmail;
     }
 
     public String gethBillId() {

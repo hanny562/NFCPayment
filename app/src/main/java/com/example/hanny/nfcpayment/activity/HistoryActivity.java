@@ -59,7 +59,7 @@ public class HistoryActivity extends AppCompatActivity{
                                 JSONObject json_data = arr.getJSONObject(i);
                                 //Toast.makeText(getApplicationContext(),json_data.getString("item_id"), Toast.LENGTH_LONG).show();
                                 String bill_id = json_data.getString("bill_id");
-                                //String email = json_data.getString("item_name");
+                                String email = json_data.getString("email");
                                 double totalPrice = json_data.getDouble("total_price");
                                 String dateString = json_data.getString("payment_date");
 
@@ -85,10 +85,9 @@ public class HistoryActivity extends AppCompatActivity{
     private void addIntoRecyclerView(final String billId, final String email, final double totalPrice, final String payment_date) {
         History history = new History();
         history.sethBillId(billId);
-        //history.sethDate(email);
+        history.sethEmail(email);
         history.sethTotalPrice(totalPrice);
         history.sethDate(payment_date);
-
 
         mItemCollection.add(history);
 
