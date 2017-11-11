@@ -32,6 +32,7 @@ import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.hanny.nfcpayment.R;
 import com.example.hanny.nfcpayment.adapter.ItemAdapter;
+import com.example.hanny.nfcpayment.app.AppConfig;
 import com.example.hanny.nfcpayment.helper.SQLController;
 import com.example.hanny.nfcpayment.helper.SessionController;
 import com.example.hanny.nfcpayment.model.Item;
@@ -265,7 +266,7 @@ public class MainActivity extends Activity {
     private void getCartItembyEmail(final String email) {
         com.android.volley.RequestQueue queue = Volley.newRequestQueue(this);
 
-        final String url = "http://192.168.0.11/populatecartbyemail.php?email=" + email;
+        final String url = AppConfig.URL_POPULATECART + email;
 
         final JsonObjectRequest getRequest = new JsonObjectRequest(Request.Method.GET, url, null,
                 new Response.Listener<JSONObject>() {
@@ -310,7 +311,7 @@ public class MainActivity extends Activity {
     private void httpRequestGET(final String item_id) {
         com.android.volley.RequestQueue queue = Volley.newRequestQueue(this);
 
-        final String url = "http://192.168.0.11/item.php?item_id=" + item_id;
+        final String url = AppConfig.URL_GETITEM + item_id;
 
         JsonObjectRequest getRequest = new JsonObjectRequest(Request.Method.GET, url, null,
                 new Response.Listener<JSONObject>() {
@@ -379,7 +380,7 @@ public class MainActivity extends Activity {
         sqlController = new SQLController(getApplicationContext());
         HashMap<String, String> user = sqlController.getUserDetails();
         final String email = user.get("email");
-        final String url = "http://192.168.0.11/addItemCart.php";
+        final String url = AppConfig.URL_ADDITEMINTOCART;
         Toast.makeText(getApplicationContext(), email + "\n" + item_id+ "\n" + quantity+ "\n" + added_date, Toast.LENGTH_LONG).show();
         StringRequest postRequest = new StringRequest(Request.Method.POST, url,
                 new Response.Listener<String>() {
@@ -405,6 +406,56 @@ public class MainActivity extends Activity {
                 params.put("item_id", item_id);
                 params.put("quantity", quantity);
                 params.put("added_date", added_date);
+
+                return params;
+            }
+        };
+        queue.add(postRequest);
+
+    }
+
+    public static class SequentialNumber
+    {
+        private static int _currentNumber=0;
+        public static String GetNextNumber()
+        {
+            _currentNumber++;
+            return "PG"+ Integer.toString(_currentNumber);
+        }
+    }
+
+    private void postItemIntoBill(final String item_id, final String quantity, final String payment_date) {
+        RequestQueue queue = Volley.newRequestQueue(this);
+        sqlController = new SQLController(getApplicationContext());
+        HashMap<String, String> user = sqlController.getUserDetails();
+        final String email = user.get("email");
+        final String billNo = SequentialNumber.GetNextNumber();
+        final String url = AppConfig.URL_ADDITEMINTOCART;
+        //Toast.makeText(getApplicationContext(), email + "\n" + item_id+ "\n" + quantity+ "\n" + added_date, Toast.LENGTH_LONG).show();
+        StringRequest postRequest = new StringRequest(Request.Method.POST, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        // response
+                        Log.d("Response", response);
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        // error
+                        Log.d("Error.Response", error.toString());
+                    }
+                }
+        ) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<String, String>();
+
+                params.put("email", email);
+                params.put("bill_id", billNo);
+                params.put("totalPrice", Double.toString(totalPrice));
+                params.put("payment_date", payment_date);
 
                 return params;
             }
