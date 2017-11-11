@@ -11,4 +11,5 @@ public class AppConfig {
     public static String URL_POPULATECART = DOMAIN + "/populatecartbyemail.php?email=";
     public static String URL_GETITEM = DOMAIN + "/item.php?item_id=";
     public static String URL_ADDITEMINTOCART = DOMAIN + "/addItemCart.php";
+    public static String URL_POPULATEHISTORY = DOMAIN + "/populatehistory.php?email=";
 }

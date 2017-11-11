@@ -14,6 +14,8 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.hanny.nfcpayment.R;
 import com.example.hanny.nfcpayment.adapter.ItemAdapter;
+import com.example.hanny.nfcpayment.app.AppConfig;
+import com.example.hanny.nfcpayment.helper.SQLController;
 import com.example.hanny.nfcpayment.model.History;
 import com.example.hanny.nfcpayment.model.Item;
 
@@ -21,6 +23,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Created by Hanny on 2/11/2017.
@@ -32,17 +35,24 @@ public class HistoryActivity extends AppCompatActivity{
     private ItemAdapter mAdapter;
     private ArrayList<History> mItemCollection;
     private double totalPrice = 0;
+    private SQLController sqlController;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_history);
+
+        HashMap<String, String> user = sqlController.getUserDetails();
+
+        String email = user.get("email");
+
+        getCartItembyEmail(email);
     }
 
     private void getCartItembyEmail(final String email) {
         com.android.volley.RequestQueue queue = Volley.newRequestQueue(this);
 
-        final String url = "http://192.168.0.11/populatecartbyemail.php?email=" + email;
+        final String url = AppConfig.URL_POPULATEHISTORY + email;
 
         final JsonObjectRequest getRequest = new JsonObjectRequest(Request.Method.GET, url, null,
                 new Response.Listener<JSONObject>() {
