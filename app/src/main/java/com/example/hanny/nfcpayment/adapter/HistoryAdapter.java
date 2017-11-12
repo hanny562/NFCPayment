@@ -36,7 +36,9 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.HistoryH
     public void onBindViewHolder(HistoryAdapter.HistoryHolder holder, int position) {
         History history = mData.get(position);
 
-
+        holder.setTvBillId(history.gethBillId());
+        holder.setTvDate(history.gethDate());
+        holder.setTvTotalPrice(history.gethTotalPrice());
     }
 
     @Override
@@ -53,17 +55,17 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.HistoryH
         TextView tvDate;
         TextView tvTotalPrice;
 
-
         public HistoryHolder(View historyView)
         {
             super(historyView);
 
             tvBillId = (TextView) historyView.findViewById(R.id.tvhBillId);
             tvDate = (TextView) historyView.findViewById(R.id.tvhDate);
+            tvTotalPrice = (TextView) historyView.findViewById(R.id.tvBillTotalPrice);
         }
 
         public void setTvBillId(String billId) {
-            tvBillId.setText(billId);
+            tvBillId.setText("Invoice no. #" + billId);
         }
 
         public void setTvDate(String Date) {
@@ -71,7 +73,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.HistoryH
         }
 
         public void setTvTotalPrice(double totalPrice) {
-            //tvTotalPrice.setText(totalPrice);
+            tvTotalPrice.setText("Total Price : RM " + Double.toString(totalPrice));
         }
 
     }

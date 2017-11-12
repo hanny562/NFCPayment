@@ -13,6 +13,7 @@ import android.nfc.NfcAdapter;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -51,7 +52,7 @@ import java.util.Calendar;
 import java.util.Map;
 import java.util.TimeZone;
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
 
     private TextView txtName, txtDay, txtDate, txtTotalPrice;
     private FloatingActionButton fab;
@@ -117,6 +118,7 @@ public class MainActivity extends Activity {
                 startHistoryActivity();
             }
         });
+        fab.setImageResource(R.drawable.payment_32);
 
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -247,6 +249,49 @@ public class MainActivity extends Activity {
                 dialog.dismiss();
             }
         });
+    }
+
+    public void afterPayment (final String email)
+    {
+        com.android.volley.RequestQueue queue = Volley.newRequestQueue(this);
+
+        final String url = AppConfig.URL_DELETEITEMCART + email;
+
+        JsonObjectRequest getRequest = new JsonObjectRequest(Request.Method.GET, url, null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        // display response
+                        Log.d("Response", response.toString());
+                        Toast.makeText(getApplicationContext(), response.toString(), Toast.LENGTH_LONG).show();
+
+                        try {
+                            response = response.getJSONObject("item");
+                            String item_id = response.getString("item_id");
+                            String item_name = response.getString("item_name");
+                            double price = response.getDouble("price");
+                            String quantity = response.getString("quantity");
+
+                            long date = System.currentTimeMillis();
+                            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy h:mm a");
+                            String dateString = sdf.format(date);
+                            calculateTotalPrice(price);
+                            addIntoRecyclerView(item_name, item_id, price, quantity, dateString);
+                            postIntoCartItem(item_id, quantity, dateString);
+                        } catch (Exception e) {
+                            Log.d("Response", e.getMessage());
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.d("Error.Response", error.toString());
+                    }
+                }
+
+        );
+        queue.add(getRequest);
     }
 
     public String getTextFromNdefRecord(NdefRecord ndefRecord) {

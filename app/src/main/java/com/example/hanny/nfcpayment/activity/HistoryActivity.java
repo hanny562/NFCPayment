@@ -1,8 +1,12 @@
 package com.example.hanny.nfcpayment.activity;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.ActivityChooserView;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.widget.Toast;
@@ -13,6 +17,7 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.hanny.nfcpayment.R;
+import com.example.hanny.nfcpayment.adapter.HistoryAdapter;
 import com.example.hanny.nfcpayment.adapter.ItemAdapter;
 import com.example.hanny.nfcpayment.app.AppConfig;
 import com.example.hanny.nfcpayment.helper.SQLController;
@@ -29,10 +34,10 @@ import java.util.HashMap;
  * Created by Hanny on 2/11/2017.
  */
 
-public class HistoryActivity extends AppCompatActivity{
+public class HistoryActivity extends AppCompatActivity {
 
     private RecyclerView mItemRecyclerView;
-    private ItemAdapter mAdapter;
+    private HistoryAdapter mAdapter;
     private ArrayList<History> mItemCollection;
     private double totalPrice = 0;
     private SQLController sqlController;
@@ -41,12 +46,24 @@ public class HistoryActivity extends AppCompatActivity{
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_history);
-
+        init();
+        sqlController = new SQLController(getApplicationContext());
         HashMap<String, String> user = sqlController.getUserDetails();
 
         String email = user.get("email");
+        Toast.makeText(getApplicationContext(), email + "in historyView", Toast.LENGTH_LONG).show();
 
         getCartItembyEmail(email);
+    }
+
+    private void init(){
+        mItemRecyclerView = (RecyclerView) findViewById(R.id.rvHistory);
+        mItemRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        mItemRecyclerView.setHasFixedSize(true);
+        mItemCollection = new ArrayList<>();
+        mAdapter = new HistoryAdapter(mItemCollection, this);
+        mItemRecyclerView.setAdapter(mAdapter);
+
     }
 
     private void getCartItembyEmail(final String email) {
@@ -69,11 +86,11 @@ public class HistoryActivity extends AppCompatActivity{
                                 JSONObject json_data = arr.getJSONObject(i);
                                 //Toast.makeText(getApplicationContext(),json_data.getString("item_id"), Toast.LENGTH_LONG).show();
                                 String bill_id = json_data.getString("bill_id");
-                                String email = json_data.getString("email");
+                                //String email = json_data.getString("email");
                                 double totalPrice = json_data.getDouble("total_price");
                                 String dateString = json_data.getString("payment_date");
 
-                                addIntoRecyclerView(bill_id, email, totalPrice, dateString);
+                                addIntoRecyclerView(bill_id, totalPrice, dateString);
                             }
 
                         } catch (Exception e) {
@@ -92,10 +109,10 @@ public class HistoryActivity extends AppCompatActivity{
         queue.add(getRequest);
     }
 
-    private void addIntoRecyclerView(final String billId, final String email, final double totalPrice, final String payment_date) {
+    private void addIntoRecyclerView(final String billId, final double totalPrice, final String payment_date) {
         History history = new History();
         history.sethBillId(billId);
-        history.sethEmail(email);
+        //history.sethEmail(email);
         history.sethTotalPrice(totalPrice);
         history.sethDate(payment_date);
 

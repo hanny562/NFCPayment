@@ -71,14 +71,6 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemHolder>{
             tvItemPrice = (TextView) itemView.findViewById(R.id.tvItemPrice);
             tvItemQuantity = (TextView) itemView.findViewById(R.id.tvItemQuantity);
             tvItemAddedDate = (TextView) itemView.findViewById(R.id.tvItemAddedDate);
-
-            itemView.setOnClickListener(this);
-            itemView.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
-                    return false;
-                }
-            });
         }
 
         public void setItemName (String itemName)
