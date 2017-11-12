@@ -6,20 +6,24 @@ import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -33,9 +37,15 @@ import com.android.volley.toolbox.Volley;
 import com.example.hanny.nfcpayment.R;
 import com.example.hanny.nfcpayment.adapter.ItemAdapter;
 import com.example.hanny.nfcpayment.app.AppConfig;
+import com.example.hanny.nfcpayment.helper.CreditCardFormat;
 import com.example.hanny.nfcpayment.helper.SQLController;
 import com.example.hanny.nfcpayment.helper.SessionController;
 import com.example.hanny.nfcpayment.model.Item;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.WriterException;
+import com.google.zxing.common.BitMatrix;
+import com.journeyapps.barcodescanner.BarcodeEncoder;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -43,6 +53,7 @@ import org.json.JSONObject;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -59,6 +70,48 @@ public class MainActivity extends AppCompatActivity {
     private ItemAdapter mAdapter;
     private ArrayList<Item> mItemCollection;
     private double totalPrice = 0;
+    private EditText etExpiryDate, etCreditCardNo, etCreditCardName, etCreditCardCV;
+    private TextWatcher mDateEntryWatcher = new TextWatcher() {
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            String working = s.toString();
+            boolean isValid = true;
+            if (working.length() == 2 && before == 0) {
+                if (Integer.parseInt(working) < 1 || Integer.parseInt(working) > 12) {
+                    isValid = false;
+                } else {
+                    working += "/";
+                    etExpiryDate.setText(working);
+                    etExpiryDate.setSelection(working.length());
+                }
+            } else if (working.length() == 7 && before == 0) {
+                String enteredYear = working.substring(3);
+                int currentYear = Calendar.getInstance().get(Calendar.YEAR);
+                if (Integer.parseInt(enteredYear) < currentYear) {
+                    isValid = false;
+                }
+            } else if (working.length() != 7) {
+                isValid = false;
+            }
+
+            if (!isValid) {
+                etExpiryDate.setError("Enter a valid date: MM/YYYY");
+            } else {
+                etExpiryDate.setError(null);
+            }
+
+        }
+
+        @Override
+        public void afterTextChanged(Editable s) {
+        }
+
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        }
+
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,11 +171,10 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showPaymentDialogBox(Double.toString(totalPrice));
+                showPaymentDiagQR(Double.toString(totalPrice));
             }
         });
     }
-
 
     private void init() {
         nfcAdapter = nfcAdapter.getDefaultAdapter(this);
@@ -250,12 +302,48 @@ public class MainActivity extends AppCompatActivity {
 
         promptTotalPrice.setText("TotalPrice : " + totalprice);
 
+        etCreditCardNo = (EditText) dialog.findViewById(R.id.etCreditCardNo);
+        etCreditCardName = (EditText) dialog.findViewById(R.id.etCreditCardName);
+        etCreditCardNo.addTextChangedListener(new CreditCardFormat.FourDigitCardFormatWatcher());
+        etExpiryDate = (EditText) dialog.findViewById(R.id.etDate);
+        etExpiryDate.addTextChangedListener(mDateEntryWatcher);
+        etCreditCardCV = (EditText) dialog.findViewById(R.id.etCV);
+
         Button btnPayment = (Button) dialog.findViewById(R.id.btnPromptPayment);
         Button btnCancel = (Button) dialog.findViewById(R.id.btnPromptCancel);
+
 
         btnPayment.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                String creditCardNo = etCreditCardNo.getText().toString();
+                String creditCardName = etCreditCardName.getText().toString();
+                String creditCardExpiryDate = etExpiryDate.getText().toString();
+                String creditCardCV = etCreditCardCV.getText().toString();
+
+                if (creditCardNo.isEmpty()) {
+                    etCreditCardNo.setError("Do not leave this area blank.");
+                } else {
+                    etCreditCardNo.setError(null);
+                }
+
+                if (creditCardName.isEmpty()) {
+                    etCreditCardName.setError("Do not leave this area blank.");
+                } else {
+                    etCreditCardNo.setError(null);
+                }
+                if (creditCardExpiryDate.isEmpty()) {
+                    etExpiryDate.setError("Do not leave this area black.");
+                } else {
+                    etExpiryDate.setError(null);
+                }
+                if (creditCardCV.isEmpty()) {
+                    etCreditCardCV.setError("Do not leave this area black.");
+                } else {
+                    etCreditCardCV.setError(null);
+                }
+
+                Toast.makeText(getApplicationContext(), creditCardNo, Toast.LENGTH_LONG).show();
 
             }
         });
@@ -265,6 +353,50 @@ public class MainActivity extends AppCompatActivity {
                 dialog.dismiss();
             }
         });
+    }
+
+    private void showPaymentDiagQR(final String totalprice) {
+        dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_barcode);
+        dialog.show();
+
+        sqlController = new SQLController(getApplicationContext());
+        HashMap<String, String> user = sqlController.getUserDetails();
+
+        String email = user.get("email");
+        String qrcontent = email;
+        barcodeGenerator(qrcontent);
+        Button btnPayWithCC = (Button) dialog.findViewById(R.id.btnPayWithCC);
+        Button btnCancel = (Button) dialog.findViewById(R.id.btnPromptCancel);
+
+        btnPayWithCC.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+                showPaymentDialogBox(totalprice);
+            }
+        });
+        btnCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+    }
+
+    public void barcodeGenerator(String qrcontent) {
+        ImageView ivBarcode = (ImageView) dialog.findViewById(R.id.ivBarcode);
+        MultiFormatWriter multiFormatWriter = new MultiFormatWriter();
+
+        try {
+            BitMatrix bitMatrix = multiFormatWriter.encode(qrcontent, BarcodeFormat.QR_CODE, 250, 250);
+            BarcodeEncoder barcodeEncoder = new BarcodeEncoder();
+            Bitmap bitmap = barcodeEncoder.createBitmap(bitMatrix);
+            ivBarcode.setImageBitmap(bitmap);
+        } catch (WriterException e) {
+            e.printStackTrace();
+        }
     }
 
     //----------------------------------------------------------------------------------------------
@@ -402,6 +534,10 @@ public class MainActivity extends AppCompatActivity {
         queue.add(getRequest);
     }
 
+    //----------------------------------------------------------------------------------------------
+    //recyclerview process
+    //----------------------------------------------------------------------------------------------
+
     //save cart into into MySQL Database
     private void postIntoCartItem(final String item_id, final String quantity, final String added_date) {
         RequestQueue queue = Volley.newRequestQueue(this);
@@ -443,7 +579,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //----------------------------------------------------------------------------------------------
-    //recyclerview process
+    //calculation process
     //----------------------------------------------------------------------------------------------
 
     private void addIntoRecyclerView(final String ItemName, final String itemId, final double itemPrice, final String itemQuantity, final String dateString) {
@@ -459,10 +595,6 @@ public class MainActivity extends AppCompatActivity {
 
         mAdapter.notifyItemInserted(0);
     }
-
-    //----------------------------------------------------------------------------------------------
-    //calculation process
-    //----------------------------------------------------------------------------------------------
 
     private void calculateTotalPrice(final double itemPrice) {
         totalPrice = totalPrice + itemPrice;
@@ -513,5 +645,4 @@ public class MainActivity extends AppCompatActivity {
 
         super.onPause();
     }
-
 }
