@@ -1,11 +1,9 @@
 package com.example.hanny.nfcpayment.activity;
 
-import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v7.app.ActionBar;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.ActivityChooserView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -18,11 +16,9 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.hanny.nfcpayment.R;
 import com.example.hanny.nfcpayment.adapter.HistoryAdapter;
-import com.example.hanny.nfcpayment.adapter.ItemAdapter;
 import com.example.hanny.nfcpayment.app.AppConfig;
 import com.example.hanny.nfcpayment.helper.SQLController;
 import com.example.hanny.nfcpayment.model.History;
-import com.example.hanny.nfcpayment.model.Item;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -51,12 +47,12 @@ public class HistoryActivity extends AppCompatActivity {
         HashMap<String, String> user = sqlController.getUserDetails();
 
         String email = user.get("email");
-        Toast.makeText(getApplicationContext(), email + "in historyView", Toast.LENGTH_LONG).show();
+        //Toast.makeText(getApplicationContext(), email + "in historyView", Toast.LENGTH_LONG).show();
 
         getCartItembyEmail(email);
     }
 
-    private void init(){
+    private void init() {
         mItemRecyclerView = (RecyclerView) findViewById(R.id.rvHistory);
         mItemRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mItemRecyclerView.setHasFixedSize(true);
@@ -82,7 +78,7 @@ public class HistoryActivity extends AppCompatActivity {
                         try {
 
                             JSONArray arr = response.getJSONArray("history");
-                            for(int i=0; i < arr.length(); i++){
+                            for (int i = 0; i < arr.length(); i++) {
                                 JSONObject json_data = arr.getJSONObject(i);
                                 //Toast.makeText(getApplicationContext(),json_data.getString("item_id"), Toast.LENGTH_LONG).show();
                                 String bill_id = json_data.getString("bill_id");
@@ -120,7 +116,4 @@ public class HistoryActivity extends AppCompatActivity {
 
         mAdapter.notifyItemInserted(0);
     }
-
-
-
 }

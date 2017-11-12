@@ -1,6 +1,5 @@
 package com.example.hanny.nfcpayment.activity;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.PendingIntent;
@@ -13,6 +12,7 @@ import android.nfc.NfcAdapter;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -22,7 +22,6 @@ import android.view.Window;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.Toolbar;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -40,20 +39,16 @@ import com.example.hanny.nfcpayment.model.Item;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 import java.io.UnsupportedEncodingException;
-import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Calendar;
 import java.util.Map;
-import java.util.TimeZone;
 
 public class MainActivity extends AppCompatActivity {
-
+    Dialog dialog;
     private TextView txtName, txtDay, txtDate, txtTotalPrice;
     private FloatingActionButton fab;
     private Button btnLogout, btnHistory;
@@ -64,7 +59,6 @@ public class MainActivity extends AppCompatActivity {
     private ItemAdapter mAdapter;
     private ArrayList<Item> mItemCollection;
     private double totalPrice = 0;
-    Dialog dialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,6 +112,7 @@ public class MainActivity extends AppCompatActivity {
                 startHistoryActivity();
             }
         });
+
         fab.setImageResource(R.drawable.payment_32);
 
         fab.setOnClickListener(new View.OnClickListener() {
@@ -127,6 +122,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
 
     private void init() {
         nfcAdapter = nfcAdapter.getDefaultAdapter(this);
@@ -177,6 +173,9 @@ public class MainActivity extends AppCompatActivity {
         super.onNewIntent(intent);
     }
 
+    //-----------------------------------------------------------------------------------------------------------
+    //NFC Function Part
+    //------------------------------------------------------------------------------------------------
     private void readTextFromMessage(NdefMessage ndefMessage) {
         NdefRecord[] ndefRecords = ndefMessage.getRecords();
 
@@ -192,6 +191,23 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public String getTextFromNdefRecord(NdefRecord ndefRecord) {
+        String tagContent = null;
+        try {
+            byte[] payload = ndefRecord.getPayload();
+            String textEncoding = ((payload[0] & 128) == 0) ? "UTF-8" : "UTF-16";
+            int languageSize = payload[0] & 0063;
+            tagContent = new String(payload, languageSize + 1,
+                    payload.length - languageSize - 1, textEncoding);
+        } catch (UnsupportedEncodingException e) {
+            Log.e("getTextFromNdefRecord", e.getMessage(), e);
+        }
+        return tagContent;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    //dialogbox process
+    //------------------------------------------------------------------------------------------------
     private void dialogboxYesNo(final String tagContent) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
@@ -223,19 +239,19 @@ public class MainActivity extends AppCompatActivity {
         alert.show();
     }
 
-    private void showPaymentDialogBox(final String totalprice){
+    private void showPaymentDialogBox(final String totalprice) {
         dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.diag_payment);
         dialog.show();
 
 
-        TextView promptTotalPrice = (TextView) dialog .findViewById(R.id.promptTotalPrice);
+        TextView promptTotalPrice = (TextView) dialog.findViewById(R.id.promptTotalPrice);
 
         promptTotalPrice.setText("TotalPrice : " + totalprice);
 
-        Button btnPayment = (Button)dialog.findViewById(R.id.btnPromptPayment);
-        Button btnCancel = (Button)dialog.findViewById(R.id.btnPromptCancel);
+        Button btnPayment = (Button) dialog.findViewById(R.id.btnPromptPayment);
+        Button btnCancel = (Button) dialog.findViewById(R.id.btnPromptCancel);
 
         btnPayment.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -251,8 +267,11 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public void afterPayment (final String email)
-    {
+    //----------------------------------------------------------------------------------------------
+    //api handling part
+    //----------------------------------------------------------------------------------------------
+    //Delete Items from cart after payment
+    public void afterPaymentProcess(final String email) {
         com.android.volley.RequestQueue queue = Volley.newRequestQueue(this);
 
         final String url = AppConfig.URL_DELETEITEMCART + email;
@@ -294,20 +313,7 @@ public class MainActivity extends AppCompatActivity {
         queue.add(getRequest);
     }
 
-    public String getTextFromNdefRecord(NdefRecord ndefRecord) {
-        String tagContent = null;
-        try {
-            byte[] payload = ndefRecord.getPayload();
-            String textEncoding = ((payload[0] & 128) == 0) ? "UTF-8" : "UTF-16";
-            int languageSize = payload[0] & 0063;
-            tagContent = new String(payload, languageSize + 1,
-                    payload.length - languageSize - 1, textEncoding);
-        } catch (UnsupportedEncodingException e) {
-            Log.e("getTextFromNdefRecord", e.getMessage(), e);
-        }
-        return tagContent;
-    }
-
+    //Populate item into recyclerview by refering user email
     private void getCartItembyEmail(final String email) {
         com.android.volley.RequestQueue queue = Volley.newRequestQueue(this);
 
@@ -324,7 +330,7 @@ public class MainActivity extends AppCompatActivity {
                         try {
 
                             JSONArray arr = response.getJSONArray("cart_item");
-                            for(int i=0; i < arr.length(); i++){
+                            for (int i = 0; i < arr.length(); i++) {
                                 JSONObject json_data = arr.getJSONObject(i);
                                 //Toast.makeText(getApplicationContext(),json_data.getString("item_id"), Toast.LENGTH_LONG).show();
                                 String item_id = json_data.getString("item_id");
@@ -353,6 +359,7 @@ public class MainActivity extends AppCompatActivity {
         queue.add(getRequest);
     }
 
+    //Get item by item id, get fron NFC tag
     private void httpRequestGET(final String item_id) {
         com.android.volley.RequestQueue queue = Volley.newRequestQueue(this);
 
@@ -395,38 +402,14 @@ public class MainActivity extends AppCompatActivity {
         queue.add(getRequest);
     }
 
-    private void addIntoRecyclerView(final String ItemName, final String itemId, final double itemPrice, final String itemQuantity, final String dateString) {
-        Item item = new Item();
-        item.setItemName(ItemName);
-        item.setItemId(itemId);
-        item.setItemPrice(itemPrice);
-        item.setItemQuantity(itemQuantity);
-
-        item.setItemAddedDate(dateString);
-
-        mItemCollection.add(item);
-
-        mAdapter.notifyItemInserted(0);
-    }
-
-
-    private void calculateTotalPrice(final double itemPrice) {
-        totalPrice = totalPrice + itemPrice;
-        txtTotalPrice.setText("RM " + Double.toString(totalPrice));
-    }
-
-    private void startHistoryActivity() {
-        Intent intent = new Intent(MainActivity.this, HistoryActivity.class);
-        startActivity(intent);
-    }
-
+    //save cart into into MySQL Database
     private void postIntoCartItem(final String item_id, final String quantity, final String added_date) {
         RequestQueue queue = Volley.newRequestQueue(this);
         sqlController = new SQLController(getApplicationContext());
         HashMap<String, String> user = sqlController.getUserDetails();
         final String email = user.get("email");
         final String url = AppConfig.URL_ADDITEMINTOCART;
-        Toast.makeText(getApplicationContext(), email + "\n" + item_id+ "\n" + quantity+ "\n" + added_date, Toast.LENGTH_LONG).show();
+        Toast.makeText(getApplicationContext(), email + "\n" + item_id + "\n" + quantity + "\n" + added_date, Toast.LENGTH_LONG).show();
         StringRequest postRequest = new StringRequest(Request.Method.POST, url,
                 new Response.Listener<String>() {
                     @Override
@@ -459,56 +442,44 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public static class SequentialNumber
-    {
-        private static int _currentNumber=0;
-        public static String GetNextNumber()
-        {
-            _currentNumber++;
-            return "PG"+ Integer.toString(_currentNumber);
-        }
+    //----------------------------------------------------------------------------------------------
+    //recyclerview process
+    //----------------------------------------------------------------------------------------------
+
+    private void addIntoRecyclerView(final String ItemName, final String itemId, final double itemPrice, final String itemQuantity, final String dateString) {
+        Item item = new Item();
+        item.setItemName(ItemName);
+        item.setItemId(itemId);
+        item.setItemPrice(itemPrice);
+        item.setItemQuantity(itemQuantity);
+
+        item.setItemAddedDate(dateString);
+
+        mItemCollection.add(item);
+
+        mAdapter.notifyItemInserted(0);
     }
 
-    private void postItemIntoBill(final String item_id, final String quantity, final String payment_date) {
-        RequestQueue queue = Volley.newRequestQueue(this);
-        sqlController = new SQLController(getApplicationContext());
-        HashMap<String, String> user = sqlController.getUserDetails();
-        final String email = user.get("email");
-        final String billNo = SequentialNumber.GetNextNumber();
-        final String url = AppConfig.URL_ADDITEMINTOCART;
-        //Toast.makeText(getApplicationContext(), email + "\n" + item_id+ "\n" + quantity+ "\n" + added_date, Toast.LENGTH_LONG).show();
-        StringRequest postRequest = new StringRequest(Request.Method.POST, url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        // response
-                        Log.d("Response", response);
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        // error
-                        Log.d("Error.Response", error.toString());
-                    }
-                }
-        ) {
-            @Override
-            protected Map<String, String> getParams() {
-                Map<String, String> params = new HashMap<String, String>();
+    //----------------------------------------------------------------------------------------------
+    //calculation process
+    //----------------------------------------------------------------------------------------------
 
-                params.put("email", email);
-                params.put("bill_id", billNo);
-                params.put("totalPrice", Double.toString(totalPrice));
-                params.put("payment_date", payment_date);
-
-                return params;
-            }
-        };
-        queue.add(postRequest);
-
+    private void calculateTotalPrice(final double itemPrice) {
+        totalPrice = totalPrice + itemPrice;
+        txtTotalPrice.setText("RM " + Double.toString(totalPrice));
     }
 
+    //----------------------------------------------------------------------------------------------
+    //Activity process
+    //----------------------------------------------------------------------------------------------
+    private void startHistoryActivity() {
+        Intent intent = new Intent(MainActivity.this, HistoryActivity.class);
+        startActivity(intent);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //Logout user
+    //----------------------------------------------------------------------------------------------
     private void logoutUser() {
         sessionController.setLogin(false);
 
@@ -518,6 +489,9 @@ public class MainActivity extends AppCompatActivity {
         finish();
     }
 
+    //----------------------------------------------------------------------------------------------
+    //Override system process
+    //----------------------------------------------------------------------------------------------
     @Override
     protected void onResume() {
         Intent intent = new Intent(this, MainActivity.class);
