@@ -13,6 +13,7 @@ import android.nfc.NfcAdapter;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -62,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
     Dialog dialog;
     private TextView txtName, txtDay, txtDate, txtTotalPrice;
     private FloatingActionButton fab;
-    private Button btnLogout, btnHistory;
+    private Button btnLogout, btnHistory, btnCancel;
     private SQLController sqlController;
     private SessionController sessionController;
     private NfcAdapter nfcAdapter;
@@ -71,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<Item> mItemCollection;
     private double totalPrice = 0;
     private EditText etExpiryDate, etCreditCardNo, etCreditCardName, etCreditCardCV;
+    private SwipeRefreshLayout mSwipeRefresh;
     private TextWatcher mDateEntryWatcher = new TextWatcher() {
 
         @Override
@@ -124,9 +126,8 @@ public class MainActivity extends AppCompatActivity {
         txtTotalPrice = (TextView) findViewById(R.id.tvInfoTotalPrice);
         btnLogout = (Button) findViewById(R.id.btnInfoLogout);
         btnHistory = (Button) findViewById(R.id.btnInfoHistory);
+        btnCancel = (Button) findViewById(R.id.btnCancel);
         fab = (FloatingActionButton) findViewById(R.id.fab);
-
-        sqlController = new SQLController(getApplicationContext());
 
         sessionController = new SessionController(getApplicationContext());
 
@@ -143,13 +144,26 @@ public class MainActivity extends AppCompatActivity {
 
         init();
 
-
+        sqlController = new SQLController(getApplicationContext());
         HashMap<String, String> user = sqlController.getUserDetails();
 
         String name = user.get("name");
         String email = user.get("email");
 
         txtName.setText(name);
+
+        mSwipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipe_container);
+        mSwipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                sqlController = new SQLController(getApplicationContext());
+                HashMap<String, String> user = sqlController.getUserDetails();
+
+                String email = user.get("email");
+                refreshCart(email);
+            }
+        });
+
 
         getCartItembyEmail(email);
 
@@ -166,12 +180,24 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        btnCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startCancelActivity();
+            }
+        });
+
         fab.setImageResource(R.drawable.payment_32);
 
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showPaymentDiagQR(totalPrice);
+                if (mAdapter.getItemCount() == 0) {
+                    Toast.makeText(getApplicationContext(), "There is no item in your cart", Toast.LENGTH_LONG).show();
+                } else {
+                    showPaymentDiagQR(totalPrice);
+                }
+
             }
         });
     }
@@ -204,6 +230,13 @@ public class MainActivity extends AppCompatActivity {
         mItemCollection = new ArrayList<>();
         mAdapter = new ItemAdapter(mItemCollection, this);
         mItemRecyclerView.setAdapter(mAdapter);
+
+        mItemRecyclerView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                return false;
+            }
+        });
     }
 
     @Override
@@ -291,6 +324,37 @@ public class MainActivity extends AppCompatActivity {
         alert.show();
     }
 
+    private void dialogDeleteItem(final String tagContent) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setTitle("Do you want to delete this item?");
+        builder.setMessage("Are you sure?");
+
+        builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
+
+            public void onClick(DialogInterface dialog, int which) {
+                // Do nothing but close the dialog
+
+                dialog.dismiss();
+                //addItemIntoCart(tagContent);
+            }
+        });
+
+        builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+                // Do nothing
+                dialog.dismiss();
+            }
+        });
+
+        AlertDialog alert = builder.create();
+        alert.show();
+    }
+
+
     private void showPaymentDialogBox(final double totalprice) {
         dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -321,30 +385,19 @@ public class MainActivity extends AppCompatActivity {
                 String creditCardExpiryDate = etExpiryDate.getText().toString();
                 String creditCardCV = etCreditCardCV.getText().toString();
 
-                if (creditCardNo.isEmpty()) {
+                if (creditCardNo.isEmpty() && creditCardName.isEmpty() && creditCardExpiryDate.isEmpty() && creditCardCV.isEmpty()) {
                     etCreditCardNo.setError("Do not leave this area blank.");
                 } else {
                     etCreditCardNo.setError(null);
+                    long date = System.currentTimeMillis();
+                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy h:mm a");
+                    String payment_date = sdf.format(date);
+                    postItemIntoHistory(totalprice, payment_date);
+                    afterPaymentProcess();
+                    setTotalPrice();
+                    Toast.makeText(getApplicationContext(), "Payment Done", Toast.LENGTH_LONG).show();
+                    dialog.dismiss();
                 }
-
-                if (creditCardName.isEmpty()) {
-                    etCreditCardName.setError("Do not leave this area blank.");
-                } else {
-                    etCreditCardNo.setError(null);
-                }
-                if (creditCardExpiryDate.isEmpty()) {
-                    etExpiryDate.setError("Do not leave this area black.");
-                } else {
-                    etExpiryDate.setError(null);
-                }
-                if (creditCardCV.isEmpty()) {
-                    etCreditCardCV.setError("Do not leave this area black.");
-                } else {
-                    etCreditCardCV.setError(null);
-                }
-
-                Toast.makeText(getApplicationContext(), creditCardNo, Toast.LENGTH_LONG).show();
-
             }
         });
         btnCancel.setOnClickListener(new View.OnClickListener() {
@@ -353,6 +406,10 @@ public class MainActivity extends AppCompatActivity {
                 dialog.dismiss();
             }
         });
+    }
+
+    private void setTotalPrice() {
+        txtTotalPrice.setText("RM 0.00");
     }
 
     private void showPaymentDiagQR(final double totalprice) {
@@ -403,11 +460,14 @@ public class MainActivity extends AppCompatActivity {
     //api handling part
     //----------------------------------------------------------------------------------------------
     //Delete Items from cart after payment
-    public void afterPaymentProcess(final String email) {
+    public void afterPaymentProcess() {
+        sqlController = new SQLController(getApplicationContext());
+        HashMap<String, String> user = sqlController.getUserDetails();
 
+        String email = user.get("email");
         final String url = AppConfig.URL_DELETEITEMCART + email;
 
-        JsonObjectRequest getRequest = new JsonObjectRequest(Request.Method.GET, url, null,
+        JsonObjectRequest getRequest = new JsonObjectRequest(Request.Method.POST, url, null,
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
@@ -416,20 +476,9 @@ public class MainActivity extends AppCompatActivity {
                         Toast.makeText(getApplicationContext(), response.toString(), Toast.LENGTH_LONG).show();
 
                         try {
-                            response = response.getJSONObject("item");
-                            String item_id = response.getString("item_id");
-                            String item_name = response.getString("item_name");
-                            double price = response.getDouble("price");
-                            String quantity = response.getString("quantity");
-
-                            long date = System.currentTimeMillis();
-                            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy h:mm a");
-                            String dateString = sdf.format(date);
-                            calculateTotalPrice(price);
-                            addIntoRecyclerView(item_name, item_id, price, quantity, dateString);
-                            postIntoCartItem(item_id, quantity, dateString);
+                            VolleyLog.v("Response:", response.toString());
                         } catch (Exception e) {
-                            VolleyLog.e("Response", e.getMessage());
+                            VolleyLog.e("Response:", e.getMessage());
                         }
                     }
                 },
@@ -457,6 +506,7 @@ public class MainActivity extends AppCompatActivity {
                         Log.d("Response", response.toString());
                         Toast.makeText(getApplicationContext(), response.toString(), Toast.LENGTH_LONG).show();
 
+                        clear();
                         try {
 
                             JSONArray arr = response.getJSONArray("cart_item");
@@ -489,6 +539,50 @@ public class MainActivity extends AppCompatActivity {
         RequestController.getInstance().addToRequestQueue(getRequest);
     }
 
+    private void refreshCart(final String email) {
+
+        final String url = AppConfig.URL_POPULATECART + email;
+
+        final JsonObjectRequest getRequest = new JsonObjectRequest(Request.Method.GET, url, null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        // display response
+                        Log.d("Response", response.toString());
+                        Toast.makeText(getApplicationContext(), response.toString(), Toast.LENGTH_LONG).show();
+
+                        clear();
+                        try {
+
+                            JSONArray arr = response.getJSONArray("cart_item");
+                            for (int i = 0; i < arr.length(); i++) {
+                                JSONObject json_data = arr.getJSONObject(i);
+                                //Toast.makeText(getApplicationContext(),json_data.getString("item_id"), Toast.LENGTH_LONG).show();
+                                String item_id = json_data.getString("item_id");
+                                String item_name = json_data.getString("item_name");
+                                double price = json_data.getDouble("price");
+                                String quantity = json_data.getString("quantity");
+                                String added_date = json_data.getString("added_date");
+
+                                addIntoRecyclerView(item_name, item_id, price, quantity, added_date);
+                                mSwipeRefresh.setRefreshing(false);
+                            }
+
+                        } catch (Exception e) {
+                            VolleyLog.e("Response", e.getMessage());
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        VolleyLog.e("Error.Response", error.getMessage());
+                    }
+                }
+
+        );
+        RequestController.getInstance().addToRequestQueue(getRequest);
+    }
     //----------------------------------------------------------------------------------------------
     //recyclerview process
     //----------------------------------------------------------------------------------------------
@@ -535,10 +629,6 @@ public class MainActivity extends AppCompatActivity {
         RequestController.getInstance().addToRequestQueue(getRequest);
     }
 
-    //----------------------------------------------------------------------------------------------
-    //calculation process
-    //----------------------------------------------------------------------------------------------
-
     //save cart into into MySQL Database
     private void postIntoCartItem(final String item_id, final String quantity, final String added_date) {
         sqlController = new SQLController(getApplicationContext());
@@ -578,6 +668,48 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void postItemIntoHistory(final double total_price, final String payment_date) {
+        sqlController = new SQLController(getApplicationContext());
+        HashMap<String, String> user = sqlController.getUserDetails();
+        final String email = user.get("email");
+        final String url = AppConfig.URL_AFTERPAYMENTHISTORY;
+        //Toast.makeText(getApplicationContext(), email + "\n" + item_id + "\n" + quantity + "\n" + added_date, Toast.LENGTH_LONG).show();
+        StringRequest postRequest = new StringRequest(Request.Method.POST, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        // response
+                        VolleyLog.v("Response", response);
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        // error
+                        VolleyLog.e("Error.Response", error.getMessage());
+                    }
+                }
+        ) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<String, String>();
+
+                params.put("email", email);
+                params.put("total_price", Double.toString(total_price));
+                params.put("payment_date", payment_date);
+
+                return params;
+            }
+        };
+        RequestController.getInstance().addToRequestQueue(postRequest);
+
+    }
+    //----------------------------------------------------------------------------------------------
+    //calculation process
+    //----------------------------------------------------------------------------------------------
+
+
+
     private void addIntoRecyclerView(final String ItemName, final String itemId, final double itemPrice, final String itemQuantity, final String dateString) {
         Item item = new Item();
         item.setItemName(ItemName);
@@ -592,6 +724,11 @@ public class MainActivity extends AppCompatActivity {
         mAdapter.notifyItemInserted(0);
     }
 
+    public void clear() {
+        mItemCollection.clear();
+        mAdapter.notifyDataSetChanged();
+    }
+
     private void calculateTotalPrice(final double itemPrice) {
         totalPrice = totalPrice + itemPrice;
         txtTotalPrice.setText("RM " + Double.toString(totalPrice));
@@ -602,6 +739,11 @@ public class MainActivity extends AppCompatActivity {
     //----------------------------------------------------------------------------------------------
     private void startHistoryActivity() {
         Intent intent = new Intent(MainActivity.this, HistoryActivity.class);
+        startActivity(intent);
+    }
+
+    private void startCancelActivity() {
+        Intent intent = new Intent(MainActivity.this, CancelActivity.class);
         startActivity(intent);
     }
 
@@ -641,4 +783,6 @@ public class MainActivity extends AppCompatActivity {
 
         super.onPause();
     }
+
+
 }

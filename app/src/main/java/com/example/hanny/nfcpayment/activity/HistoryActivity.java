@@ -37,6 +37,7 @@ public class HistoryActivity extends AppCompatActivity {
     private ArrayList<History> mItemCollection;
     private double totalPrice = 0;
     private SQLController sqlController;
+    private SwipeRefreshLayout mSwipeRefreshLayout;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -49,7 +50,19 @@ public class HistoryActivity extends AppCompatActivity {
         String email = user.get("email");
         //Toast.makeText(getApplicationContext(), email + "in historyView", Toast.LENGTH_LONG).show();
 
-        getCartItembyEmail(email);
+        mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipe_history_container);
+        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                sqlController = new SQLController(getApplicationContext());
+                HashMap<String, String> user = sqlController.getUserDetails();
+
+                String email = user.get("email");
+                getHistory(email);
+            }
+        });
+
+        getHistory(email);
     }
 
     private void init() {
@@ -62,7 +75,7 @@ public class HistoryActivity extends AppCompatActivity {
 
     }
 
-    private void getCartItembyEmail(final String email) {
+    private void getHistory(final String email) {
         com.android.volley.RequestQueue queue = Volley.newRequestQueue(this);
 
         final String url = AppConfig.URL_POPULATEHISTORY + email;
@@ -75,6 +88,7 @@ public class HistoryActivity extends AppCompatActivity {
                         Log.d("Response", response.toString());
                         Toast.makeText(getApplicationContext(), response.toString(), Toast.LENGTH_LONG).show();
 
+                        clear();
                         try {
 
                             JSONArray arr = response.getJSONArray("history");
@@ -87,6 +101,7 @@ public class HistoryActivity extends AppCompatActivity {
                                 String dateString = json_data.getString("payment_date");
 
                                 addIntoRecyclerView(bill_id, totalPrice, dateString);
+                                mSwipeRefreshLayout.setRefreshing(false);
                             }
 
                         } catch (Exception e) {
@@ -116,4 +131,10 @@ public class HistoryActivity extends AppCompatActivity {
 
         mAdapter.notifyItemInserted(0);
     }
+
+    public void clear() {
+        mItemCollection.clear();
+        mAdapter.notifyDataSetChanged();
+    }
+
 }
