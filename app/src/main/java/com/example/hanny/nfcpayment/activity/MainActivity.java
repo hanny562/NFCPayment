@@ -28,15 +28,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.Request;
-import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
 import com.example.hanny.nfcpayment.R;
 import com.example.hanny.nfcpayment.adapter.ItemAdapter;
 import com.example.hanny.nfcpayment.app.AppConfig;
+import com.example.hanny.nfcpayment.app.RequestController;
 import com.example.hanny.nfcpayment.helper.CreditCardFormat;
 import com.example.hanny.nfcpayment.helper.SQLController;
 import com.example.hanny.nfcpayment.helper.SessionController;
@@ -171,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showPaymentDiagQR(Double.toString(totalPrice));
+                showPaymentDiagQR(totalPrice);
             }
         });
     }
@@ -291,7 +291,7 @@ public class MainActivity extends AppCompatActivity {
         alert.show();
     }
 
-    private void showPaymentDialogBox(final String totalprice) {
+    private void showPaymentDialogBox(final double totalprice) {
         dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.diag_payment);
@@ -300,7 +300,7 @@ public class MainActivity extends AppCompatActivity {
 
         TextView promptTotalPrice = (TextView) dialog.findViewById(R.id.promptTotalPrice);
 
-        promptTotalPrice.setText("TotalPrice : " + totalprice);
+        promptTotalPrice.setText("TotalPrice : " + Double.toString(totalprice));
 
         etCreditCardNo = (EditText) dialog.findViewById(R.id.etCreditCardNo);
         etCreditCardName = (EditText) dialog.findViewById(R.id.etCreditCardName);
@@ -355,7 +355,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void showPaymentDiagQR(final String totalprice) {
+    private void showPaymentDiagQR(final double totalprice) {
         dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.dialog_barcode);
@@ -404,7 +404,6 @@ public class MainActivity extends AppCompatActivity {
     //----------------------------------------------------------------------------------------------
     //Delete Items from cart after payment
     public void afterPaymentProcess(final String email) {
-        com.android.volley.RequestQueue queue = Volley.newRequestQueue(this);
 
         final String url = AppConfig.URL_DELETEITEMCART + email;
 
@@ -413,7 +412,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(JSONObject response) {
                         // display response
-                        Log.d("Response", response.toString());
+                        VolleyLog.v("Response", response.toString());
                         Toast.makeText(getApplicationContext(), response.toString(), Toast.LENGTH_LONG).show();
 
                         try {
@@ -430,24 +429,23 @@ public class MainActivity extends AppCompatActivity {
                             addIntoRecyclerView(item_name, item_id, price, quantity, dateString);
                             postIntoCartItem(item_id, quantity, dateString);
                         } catch (Exception e) {
-                            Log.d("Response", e.getMessage());
+                            VolleyLog.e("Response", e.getMessage());
                         }
                     }
                 },
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Log.d("Error.Response", error.toString());
+                        VolleyLog.e("Error.Response", error.toString());
                     }
                 }
 
         );
-        queue.add(getRequest);
+        RequestController.getInstance().addToRequestQueue(getRequest);
     }
 
     //Populate item into recyclerview by refering user email
     private void getCartItembyEmail(final String email) {
-        com.android.volley.RequestQueue queue = Volley.newRequestQueue(this);
 
         final String url = AppConfig.URL_POPULATECART + email;
 
@@ -476,24 +474,27 @@ public class MainActivity extends AppCompatActivity {
                             }
 
                         } catch (Exception e) {
-                            Log.d("Response", e.getMessage());
+                            VolleyLog.e("Response", e.getMessage());
                         }
                     }
                 },
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Log.d("Error.Response", error.getMessage());
+                        VolleyLog.e("Error.Response", error.getMessage());
                     }
                 }
 
         );
-        queue.add(getRequest);
+        RequestController.getInstance().addToRequestQueue(getRequest);
     }
+
+    //----------------------------------------------------------------------------------------------
+    //recyclerview process
+    //----------------------------------------------------------------------------------------------
 
     //Get item by item id, get fron NFC tag
     private void httpRequestGET(final String item_id) {
-        com.android.volley.RequestQueue queue = Volley.newRequestQueue(this);
 
         final String url = AppConfig.URL_GETITEM + item_id;
 
@@ -519,28 +520,27 @@ public class MainActivity extends AppCompatActivity {
                             addIntoRecyclerView(item_name, item_id, price, quantity, dateString);
                             postIntoCartItem(item_id, quantity, dateString);
                         } catch (Exception e) {
-                            Log.d("Response", e.getMessage());
+                            VolleyLog.e("Response", e.getMessage());
                         }
                     }
                 },
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Log.d("Error.Response", error.toString());
+                        VolleyLog.e("Error.Response", error.getMessage());
                     }
                 }
 
         );
-        queue.add(getRequest);
+        RequestController.getInstance().addToRequestQueue(getRequest);
     }
 
     //----------------------------------------------------------------------------------------------
-    //recyclerview process
+    //calculation process
     //----------------------------------------------------------------------------------------------
 
     //save cart into into MySQL Database
     private void postIntoCartItem(final String item_id, final String quantity, final String added_date) {
-        RequestQueue queue = Volley.newRequestQueue(this);
         sqlController = new SQLController(getApplicationContext());
         HashMap<String, String> user = sqlController.getUserDetails();
         final String email = user.get("email");
@@ -551,14 +551,14 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(String response) {
                         // response
-                        Log.d("Response", response);
+                        VolleyLog.v("Response", response);
                     }
                 },
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         // error
-                        Log.d("Error.Response", error.toString());
+                        VolleyLog.e("Error.Response", error.getMessage());
                     }
                 }
         ) {
@@ -574,13 +574,9 @@ public class MainActivity extends AppCompatActivity {
                 return params;
             }
         };
-        queue.add(postRequest);
+        RequestController.getInstance().addToRequestQueue(postRequest);
 
     }
-
-    //----------------------------------------------------------------------------------------------
-    //calculation process
-    //----------------------------------------------------------------------------------------------
 
     private void addIntoRecyclerView(final String ItemName, final String itemId, final double itemPrice, final String itemQuantity, final String dateString) {
         Item item = new Item();

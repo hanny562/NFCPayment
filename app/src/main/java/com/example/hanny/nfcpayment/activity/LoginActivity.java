@@ -1,12 +1,10 @@
 package com.example.hanny.nfcpayment.activity;
 
 import android.app.Activity;
-import android.app.IntentService;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.annotation.StringRes;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -23,8 +21,8 @@ import com.example.hanny.nfcpayment.app.RequestController;
 import com.example.hanny.nfcpayment.helper.SQLController;
 import com.example.hanny.nfcpayment.helper.SessionController;
 
-    import org.json.JSONException;
-    import org.json.JSONObject;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -148,7 +146,7 @@ public class LoginActivity extends Activity{
             public void onErrorResponse(VolleyError error) {
                 Log.e(TAG, "Login Error: " + error.getMessage());
                 Toast.makeText(getApplicationContext(),
-                        error.getMessage(), Toast.LENGTH_LONG).show();
+                        error.toString(), Toast.LENGTH_LONG).show();
                 hideDialog();
             }
         }) {
