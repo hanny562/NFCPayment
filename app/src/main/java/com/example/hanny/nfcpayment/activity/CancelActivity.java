@@ -132,13 +132,14 @@ public class CancelActivity extends AppCompatActivity {
 
                 dialog.dismiss();
                 dropItem(tagContent);
+                startMainActivity();
+                finish();
             }
         });
         builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
 
             @Override
             public void onClick(DialogInterface dialog, int which) {
-
                 // Do nothing
                 dialog.dismiss();
             }
@@ -150,7 +151,7 @@ public class CancelActivity extends AppCompatActivity {
 
     @Override
     protected void onResume() {
-        Intent intent = new Intent(this, MainActivity.class);
+        Intent intent = new Intent(this, CancelActivity.class);
         intent.addFlags(Intent.FLAG_RECEIVER_REPLACE_PENDING);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
         IntentFilter[] intentFilters = new IntentFilter[]{};
@@ -197,5 +198,10 @@ public class CancelActivity extends AppCompatActivity {
 
         );
         RequestController.getInstance().addToRequestQueue(getRequest);
+    }
+
+    private void startMainActivity() {
+        Intent intent = new Intent(CancelActivity.this, MainActivity.class);
+        startActivity(intent);
     }
 }

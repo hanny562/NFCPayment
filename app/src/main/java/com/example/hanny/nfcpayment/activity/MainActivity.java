@@ -324,37 +324,6 @@ public class MainActivity extends AppCompatActivity {
         alert.show();
     }
 
-    private void dialogDeleteItem(final String tagContent) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
-        builder.setTitle("Do you want to delete this item?");
-        builder.setMessage("Are you sure?");
-
-        builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
-
-            public void onClick(DialogInterface dialog, int which) {
-                // Do nothing but close the dialog
-
-                dialog.dismiss();
-                //addItemIntoCart(tagContent);
-            }
-        });
-
-        builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
-
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-
-                // Do nothing
-                dialog.dismiss();
-            }
-        });
-
-        AlertDialog alert = builder.create();
-        alert.show();
-    }
-
-
     private void showPaymentDialogBox(final double totalprice) {
         dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -404,6 +373,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 dialog.dismiss();
+                finish();
             }
         });
     }
@@ -442,19 +412,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public void barcodeGenerator(String qrcontent) {
-        ImageView ivBarcode = (ImageView) dialog.findViewById(R.id.ivBarcode);
-        MultiFormatWriter multiFormatWriter = new MultiFormatWriter();
 
-        try {
-            BitMatrix bitMatrix = multiFormatWriter.encode(qrcontent, BarcodeFormat.QR_CODE, 250, 250);
-            BarcodeEncoder barcodeEncoder = new BarcodeEncoder();
-            Bitmap bitmap = barcodeEncoder.createBitmap(bitMatrix);
-            ivBarcode.setImageBitmap(bitmap);
-        } catch (WriterException e) {
-            e.printStackTrace();
-        }
-    }
 
     //----------------------------------------------------------------------------------------------
     //api handling part
@@ -583,9 +541,7 @@ public class MainActivity extends AppCompatActivity {
         );
         RequestController.getInstance().addToRequestQueue(getRequest);
     }
-    //----------------------------------------------------------------------------------------------
-    //recyclerview process
-    //----------------------------------------------------------------------------------------------
+
 
     //Get item by item id, get fron NFC tag
     private void httpRequestGET(final String item_id) {
@@ -629,7 +585,7 @@ public class MainActivity extends AppCompatActivity {
         RequestController.getInstance().addToRequestQueue(getRequest);
     }
 
-    //save cart into into MySQL Database
+    //Api POST method to insert into MYSQL
     private void postIntoCartItem(final String item_id, final String quantity, final String added_date) {
         sqlController = new SQLController(getApplicationContext());
         HashMap<String, String> user = sqlController.getUserDetails();
@@ -668,6 +624,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    // API post method to POST email, can get history table from database
     private void postItemIntoHistory(final double total_price, final String payment_date) {
         sqlController = new SQLController(getApplicationContext());
         HashMap<String, String> user = sqlController.getUserDetails();
@@ -705,11 +662,8 @@ public class MainActivity extends AppCompatActivity {
 
     }
     //----------------------------------------------------------------------------------------------
-    //calculation process
+    //recyclerview process
     //----------------------------------------------------------------------------------------------
-
-
-
     private void addIntoRecyclerView(final String ItemName, final String itemId, final double itemPrice, final String itemQuantity, final String dateString) {
         Item item = new Item();
         item.setItemName(ItemName);
@@ -728,10 +682,26 @@ public class MainActivity extends AppCompatActivity {
         mItemCollection.clear();
         mAdapter.notifyDataSetChanged();
     }
-
+    //----------------------------------------------------------------------------------------------
+    //calculation process
+    //----------------------------------------------------------------------------------------------
     private void calculateTotalPrice(final double itemPrice) {
         totalPrice = totalPrice + itemPrice;
         txtTotalPrice.setText("RM " + Double.toString(totalPrice));
+    }
+
+    public void barcodeGenerator(String qrcontent) {
+        ImageView ivBarcode = (ImageView) dialog.findViewById(R.id.ivBarcode);
+        MultiFormatWriter multiFormatWriter = new MultiFormatWriter();
+
+        try {
+            BitMatrix bitMatrix = multiFormatWriter.encode(qrcontent, BarcodeFormat.QR_CODE, 250, 250);
+            BarcodeEncoder barcodeEncoder = new BarcodeEncoder();
+            Bitmap bitmap = barcodeEncoder.createBitmap(bitMatrix);
+            ivBarcode.setImageBitmap(bitmap);
+        } catch (WriterException e) {
+            e.printStackTrace();
+        }
     }
 
     //----------------------------------------------------------------------------------------------

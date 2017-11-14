@@ -5,7 +5,7 @@ package com.example.hanny.nfcpayment.app;
  */
 
 public class AppConfig {
-    private static String DOMAIN = "http://192.168.0.108";
+    private static String DOMAIN = "http://192.168.0.11";
     public static String URL_LOGIN = DOMAIN + "/login.php";
     public static String URL_REGISTER = DOMAIN + "/register.php";
     public static String URL_POPULATECART = DOMAIN + "/populatecartbyemail.php?email=";
